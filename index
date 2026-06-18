@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Categorisation of Healthcare Organisations</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Spectral:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --bg:#EEF1ED; --surface:#FFFFFF; --ink:#15302A; --ink-soft:#3D4D47;
+    --muted:#6B7A73; --line:#E0E5DF; --line-2:#EBEEE9;
+    --primary:#1C5D52; --primary-deep:#143C35; --accent:#BE8A2C;
+    --tier-astar:#BE8A2C; --tier-a:#1C5D52; --tier-b:#3E6E9E; --tier-c:#C7892F; --tier-d:#8A8F8B;
+    --radius:14px; --shadow:0 1px 2px rgba(20,60,53,.05),0 8px 28px rgba(20,60,53,.07);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:"IBM Plex Sans",system-ui,sans-serif; font-size:15px; line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3{font-family:"Spectral",Georgia,serif; font-weight:600; letter-spacing:-.01em; margin:0}
+  .mono{font-family:"IBM Plex Mono",monospace; font-variant-numeric:tabular-nums}
+  a{color:var(--primary)}
+
+  /* ---------- Masthead ---------- */
+  .masthead{background:var(--primary-deep); color:#EAF1EE; padding:30px 0 26px;}
+  .wrap{max-width:1160px; margin:0 auto; padding:0 22px}
+  .eyebrow{font-size:11.5px; letter-spacing:.22em; text-transform:uppercase; color:#9CC0B6; font-weight:600}
+  .masthead h1{color:#fff; font-size:30px; margin-top:8px; line-height:1.12}
+  .masthead p{color:#B9D2CA; max-width:660px; margin:10px 0 0; font-size:14.5px}
+
+  /* ---------- Layout ---------- */
+  .layout{display:grid; grid-template-columns:1fr 350px; gap:28px; align-items:start; padding:28px 0 80px}
+  @media(max-width:940px){ .layout{grid-template-columns:1fr; padding-top:0} }
+
+  /* ---------- Cards ---------- */
+  .card{background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow); margin-bottom:20px; overflow:hidden}
+  .card-head{padding:18px 22px 16px; border-bottom:1px solid var(--line-2); display:flex; align-items:baseline; gap:12px}
+  .card-head .idx{font-family:"IBM Plex Mono",monospace; font-size:12px; color:var(--accent); font-weight:600; letter-spacing:.05em; padding-top:3px}
+  .card-head h2{font-size:19px}
+  .card-head .sub{font-size:12.5px; color:var(--muted); margin-top:2px}
+  .card-head .pts{margin-left:auto; font-size:11px; letter-spacing:.04em; color:var(--primary); background:#EAF3F0; border:1px solid #D3E6E0; padding:3px 9px; border-radius:999px; font-weight:600; white-space:nowrap; align-self:center}
+  .card-body{padding:20px 22px 22px}
+
+  /* ---------- Fields ---------- */
+  .grid{display:grid; gap:16px}
+  .g2{grid-template-columns:1fr 1fr}
+  .g3{grid-template-columns:1fr 1fr 1fr}
+  @media(max-width:560px){ .g2,.g3{grid-template-columns:1fr} }
+  .field{display:flex; flex-direction:column; gap:6px}
+  .field.span2{grid-column:1/-1}
+  label{font-size:12.5px; font-weight:600; color:var(--ink-soft)}
+  label .req{color:#B4442F}
+  .hint{font-size:11.5px; color:var(--muted); font-weight:400}
+  input,select{
+    font-family:inherit; font-size:14px; color:var(--ink); background:#fff;
+    border:1px solid var(--line); border-radius:9px; padding:10px 12px; width:100%;
+    transition:border-color .15s, box-shadow .15s; appearance:none;
+  }
+  select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%231C5D52' stroke-width='1.7' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 13px center; padding-right:34px; cursor:pointer}
+  input:focus,select:focus{outline:none; border-color:var(--primary); box-shadow:0 0 0 3px rgba(28,93,82,.13)}
+  input::placeholder{color:#9AA8A1}
+
+  /* facility-type prompt */
+  .cap-prompt{padding:24px; text-align:center; color:var(--muted); font-size:13.5px; border:1px dashed var(--line); border-radius:10px; background:#FAFBFA}
+  .cap-block{display:none}
+  .cap-block.active{display:block}
+
+  /* declared / schemes */
+  .chips{display:flex; flex-wrap:wrap; gap:8px}
+  .chk{display:inline-flex; align-items:center; gap:7px; border:1px solid var(--line); border-radius:999px; padding:7px 13px; font-size:13px; cursor:pointer; user-select:none; background:#fff}
+  .chk input{width:auto}
+  .chk:has(input:checked){border-color:var(--primary); background:#EAF3F0; color:var(--primary-deep); font-weight:600}
+  .radio-row{display:flex; gap:10px}
+  .radio-row .chk{flex:0 0 auto}
+
+  /* declaration */
+  .declare{display:flex; gap:11px; align-items:flex-start; font-size:13px; color:var(--ink-soft)}
+  .declare input{width:18px; height:18px; margin-top:2px; accent-color:var(--primary)}
+
+  .actions{display:flex; gap:12px; flex-wrap:wrap; margin-top:6px}
+  .btn{font-family:inherit; font-size:14px; font-weight:600; border-radius:10px; padding:12px 22px; cursor:pointer; border:1px solid transparent; transition:transform .08s, background .15s}
+  .btn:active{transform:translateY(1px)}
+  .btn-primary{background:var(--primary); color:#fff}
+  .btn-primary:hover{background:var(--primary-deep)}
+  .btn-ghost{background:#fff; border-color:var(--line); color:var(--ink-soft)}
+  .btn-ghost:hover{border-color:var(--primary); color:var(--primary)}
+
+  /* ---------- Result panel (signature) ---------- */
+  .panel-col{position:sticky; top:18px}
+  @media(max-width:940px){ .panel-col{position:static; margin-top:4px} }
+  .panel{background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow); overflow:hidden}
+  .panel-top{background:linear-gradient(165deg,#1C5D52,#143C35); color:#fff; padding:22px 22px 18px; text-align:center; position:relative}
+  .panel-top .lbl{font-size:11px; letter-spacing:.18em; text-transform:uppercase; color:#9CC0B6; font-weight:600}
+
+  .seal{width:128px; height:128px; margin:14px auto 6px; position:relative}
+  .seal svg{transform:rotate(-90deg)}
+  .seal .ring-bg{stroke:rgba(255,255,255,.16)}
+  .seal .ring-fg{stroke:var(--accent); stroke-linecap:round; transition:stroke-dashoffset .6s cubic-bezier(.4,0,.2,1)}
+  .seal .center{position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center}
+  .seal .grade{font-family:"Spectral",serif; font-weight:700; font-size:38px; line-height:1; color:#fff}
+  .seal .grade.placeholder{color:rgba(255,255,255,.35); font-size:30px}
+  .seal .scoreline{font-family:"IBM Plex Mono",monospace; font-size:12px; color:#B9D2CA; margin-top:4px}
+  .cat-name{font-size:14px; color:#EAF1EE; font-weight:600; min-height:18px}
+
+  /* rate-band — deliberately separate from the seal */
+  .band{margin:0 18px; transform:translateY(-12px); background:#fff; border:1px solid var(--line); border-radius:11px; padding:12px 14px; box-shadow:0 6px 18px rgba(20,60,53,.08)}
+  .band .row{display:flex; align-items:center; gap:9px}
+  .band .pin{width:24px; height:24px; flex:0 0 auto; border-radius:6px; background:#EEF3F1; display:flex; align-items:center; justify-content:center}
+  .band .pin svg{display:block}
+  .band .k{font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); font-weight:600}
+  .band .v{font-family:"IBM Plex Mono",monospace; font-size:18px; font-weight:600; color:var(--primary-deep); margin-left:auto}
+  .band .note{font-size:10.5px; color:var(--muted); margin-top:7px; line-height:1.35}
+
+  .breakdown{padding:6px 18px 16px}
+  .brk{display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:1px solid var(--line-2)}
+  .brk:last-child{border-bottom:none}
+  .brk .name{font-size:12.5px; color:var(--ink-soft)}
+  .brk .bar{flex:1; height:6px; background:#EDF1EE; border-radius:99px; overflow:hidden}
+  .brk .bar i{display:block; height:100%; width:0; background:var(--primary); border-radius:99px; transition:width .5s ease}
+  .brk .val{font-family:"IBM Plex Mono",monospace; font-size:12px; color:var(--ink); min-width:46px; text-align:right}
+
+  .progress{padding:0 18px 18px}
+  .progress .track{height:5px; background:#EDF1EE; border-radius:99px; overflow:hidden}
+  .progress .track i{display:block; height:100%; width:0; background:var(--accent); transition:width .4s ease}
+  .progress .txt{font-size:11.5px; color:var(--muted); margin-top:7px; display:flex; justify-content:space-between}
+
+  .panel-foot{border-top:1px solid var(--line-2); padding:14px 18px; display:flex; flex-direction:column; gap:9px}
+  .status{font-size:12px; text-align:center; padding:8px; border-radius:8px; display:none}
+  .status.ok{display:block; background:#E7F3EE; color:#1C5D52; border:1px solid #CBE6DC}
+  .status.warn{display:block; background:#FBF2E4; color:#9A6A12; border:1px solid #F0DEB9}
+
+  .tier-legend{font-size:11px; color:var(--muted); padding:0 18px 16px; line-height:1.6}
+  .tier-legend b{color:var(--ink-soft)}
+
+  footer{color:var(--muted); font-size:12px; text-align:center; padding:0 0 40px}
+
+  @media print{
+    body{background:#fff}
+    .masthead{background:#143C35 !important; -webkit-print-color-adjust:exact; print-color-adjust:exact}
+    .form-col{display:none}
+    .layout{grid-template-columns:1fr}
+    .panel-col{position:static}
+    .panel-top{-webkit-print-color-adjust:exact; print-color-adjust:exact}
+    .panel-foot{display:none}
+  }
+</style>
+</head>
+<body>
+
+<div class="masthead">
+  <div class="wrap">
+    <div class="eyebrow">Payer–Provider Reference Framework · v2.0</div>
+    <h1>Categorisation of Healthcare Organisations</h1>
+    <p>A common, objectively verifiable reference for structuring contracts, rate negotiation and empanelment between providers and insurers. This is not a clinical ranking — a facility's category describes which tier of contract terms it qualifies for.</p>
+  </div>
+</div>
+
+<div class="wrap">
+<div class="layout">
+
+  <!-- ============ FORM COLUMN ============ -->
+  <div class="form-col">
+
+    <!-- 0 · Facility type -->
+    <section class="card">
+      <div class="card-head"><span class="idx">00</span><div><h2>Facility type</h2><div class="sub">Sets the capability questions that apply to you</div></div></div>
+      <div class="card-body">
+        <div class="field">
+          <label for="facilityType">What type of facility is this? <span class="req">*</span></label>
+          <select id="facilityType">
+            <option value="">— Select —</option>
+            <option value="multi"  data-group="hospital">Multi-specialty hospital</option>
+            <option value="single" data-group="hospital">Single-specialty hospital</option>
+            <option value="super"  data-group="hospital">Super-specialty hospital</option>
+            <option value="cancer" data-group="hospital">Exclusive cancer hospital</option>
+            <option value="eye"      data-group="eye">Exclusive eye hospital / centre</option>
+            <option value="dental"   data-group="dental">Exclusive dental clinic</option>
+            <option value="dialysis" data-group="dialysis">Standalone dialysis centre</option>
+            <option value="chemo"    data-group="chemo">Standalone chemotherapy centre</option>
+            <option value="lab"      data-group="lab">Standalone diagnostic lab / imaging centre</option>
+          </select>
+        </div>
+      </div>
+    </section>
+
+    <!-- 1 · Identity -->
+    <section class="card">
+      <div class="card-head"><span class="idx">01</span><div><h2>Facility identity</h2><div class="sub">Registration and contact details · not scored</div></div></div>
+      <div class="card-body">
+        <div class="grid g2">
+          <div class="field span2"><label>Facility name <span class="req">*</span></label><input id="hospitalName" /></div>
+          <div class="field"><label>Legal entity name <span class="req">*</span></label><input id="legalEntity" /></div>
+          <div class="field"><label>Ownership <span class="req">*</span></label>
+            <select id="ownership"><option value="">— Select —</option><option>Private</option><option>Public / Government</option><option>Trust / NGO</option><option>PPP</option></select></div>
+          <div class="field span2"><label>Registered address <span class="req">*</span></label><input id="address" /></div>
+          <div class="field"><label>State <span class="req">*</span></label><input id="state" /></div>
+          <div class="field"><label>District <span class="req">*</span></label><input id="district" /></div>
+          <div class="field"><label>Pin code <span class="req">*</span></label><input id="pin" inputmode="numeric" /></div>
+          <div class="field"><label>HFR ID <span class="hint">(verification hook)</span></label><input id="hfrId" placeholder="Health Facility Registry ID" /></div>
+          <div class="field"><label>ROHINI ID</label><input id="rohiniId" /></div>
+          <div class="field"><label>Contact person <span class="req">*</span></label><input id="contactPerson" /></div>
+          <div class="field"><label>Designation</label><input id="designation" /></div>
+          <div class="field"><label>Email <span class="req">*</span></label><input id="email" type="email" /></div>
+          <div class="field"><label>Mobile <span class="req">*</span></label><input id="mobile" inputmode="numeric" /></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2 · Accreditation -->
+    <section class="card">
+      <div class="card-head"><span class="idx">02</span><div><h2>Accreditation &amp; quality</h2><div class="sub">The dominant axis · verified via NABH / NABL / QCI registry</div></div><span class="pts">45 pts</span></div>
+      <div class="card-body">
+        <div class="field">
+          <label for="q1">Highest valid accreditation held <span class="req">*</span></label>
+          <div class="hint" style="margin-bottom:2px">Applicable board: NABH for hospitals / eye / dental · NABL for labs · QCI or NABH for dialysis &amp; chemo</div>
+          <select id="q1" class="scored" data-block="acc">
+            <option value="">— Select —</option>
+            <option value="0">None / not accredited</option>
+            <option value="5">Applied for entry-level</option>
+            <option value="20">Entry-level NABH / NABL or QCI recommendation</option>
+            <option value="35">Full NABH / Full NABL</option>
+            <option value="45">Full NABH / NABL + JCI or international (ISQua)</option>
+          </select>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3 · Capability (branches) -->
+    <section class="card">
+      <div class="card-head"><span class="idx">03</span><div><h2>Facility capability</h2><div class="sub">Questions depend on facility type · verified via HFR / registration / accreditation scope</div></div><span class="pts">45 pts</span></div>
+      <div class="card-body">
+        <div id="capPrompt" class="cap-prompt">Select a facility type above to load its capability questions.</div>
+
+        <!-- hospital -->
+        <div class="cap-block grid g3" data-group="hospital">
+          <div class="field"><label>Functional beds</label><select class="scored cap-select"><option value="">—</option><option value="0">Less than 30</option><option value="8">30–50</option><option value="11">51–100</option><option value="15">101–200</option><option value="19">More than 200</option></select></div>
+          <div class="field"><label>Emergency &amp; critical care</label><select class="scored cap-select"><option value="">—</option><option value="0">No emergency / no ICU</option><option value="5">Emergency + OT, no ICU</option><option value="9">Emergency + ICU + OT</option><option value="13">Emergency + ICU/HDU + multiple OTs + blood bank</option></select></div>
+          <div class="field"><label>Specialty scope</label><select class="scored cap-select"><option value="">—</option><option value="5">Single-specialty</option><option value="9">Multi-specialty (≥4 broad specialties)</option><option value="13">Super-specialty / tertiary, in-house</option></select></div>
+        </div>
+
+        <!-- eye -->
+        <div class="cap-block grid g3" data-group="eye">
+          <div class="field"><label>Beds</label><select class="scored cap-select"><option value="">—</option><option value="0">Less than 5</option><option value="10">5</option><option value="15">6–10</option><option value="19">More than 10</option></select></div>
+          <div class="field"><label>Surgical capability</label><select class="scored cap-select"><option value="">—</option><option value="0">OPD only</option><option value="8">Basic surgical OT</option><option value="11">Phaco + retina / glaucoma</option><option value="15">Full ophthalmic suite incl. vitreoretinal</option></select></div>
+          <div class="field"><label>Specialist coverage</label><select class="scored cap-select"><option value="">—</option><option value="0">Visiting only</option><option value="5">1 full-time ophthalmologist</option><option value="11">Multiple full-time + defined volume</option></select></div>
+        </div>
+
+        <!-- dental -->
+        <div class="cap-block grid g3" data-group="dental">
+          <div class="field"><label>Dental chairs</label><select class="scored cap-select"><option value="">—</option><option value="0">Less than 2</option><option value="10">2–3</option><option value="15">4–6</option><option value="19">More than 6</option></select></div>
+          <div class="field"><label>Surgical scope</label><select class="scored cap-select"><option value="">—</option><option value="5">Basic dentistry</option><option value="10">Oral surgery</option><option value="15">Maxillofacial surgery + OT + ≥10 beds</option></select></div>
+          <div class="field"><label>Imaging / lab support</label><select class="scored cap-select"><option value="">—</option><option value="0">None</option><option value="5">OPG / RVG</option><option value="8">OPG + CBCT</option><option value="11">CBCT + in-house lab</option></select></div>
+        </div>
+
+        <!-- dialysis -->
+        <div class="cap-block grid g3" data-group="dialysis">
+          <div class="field"><label>Dialysis machines</label><select class="scored cap-select"><option value="">—</option><option value="0">Less than 6</option><option value="10">6–9</option><option value="15">10–15</option><option value="19">More than 15</option></select></div>
+          <div class="field"><label>Supervision &amp; safety</label><select class="scored cap-select"><option value="">—</option><option value="0">No nephrologist</option><option value="8">Visiting nephrologist</option><option value="11">Full-time + trained staff</option><option value="15">+ seropositive-reserved machine, emergency cart/defib/O₂</option></select></div>
+          <div class="field"><label>Continuity &amp; tie-up</label><select class="scored cap-select"><option value="">—</option><option value="0">None</option><option value="5">Informal</option><option value="11">Formal hospital tie-up + RMO + pharmacy</option></select></div>
+        </div>
+
+        <!-- chemo -->
+        <div class="cap-block grid g3" data-group="chemo">
+          <div class="field"><label>Beds</label><select class="scored cap-select"><option value="">—</option><option value="0">Less than 6</option><option value="10">6–9</option><option value="15">10–15</option><option value="19">More than 15</option></select></div>
+          <div class="field"><label>Oncology supervision &amp; safety</label><select class="scored cap-select"><option value="">—</option><option value="0">No oncologist</option><option value="8">Visiting</option><option value="11">Full-time medical oncologist + trained nursing</option><option value="15">+ biosafety cabinet</option></select></div>
+          <div class="field"><label>Support &amp; tie-up</label><select class="scored cap-select"><option value="">—</option><option value="0">None</option><option value="5">Basic lab</option><option value="11">Basic lab + hospital tie-up + RMO + pharmacy</option></select></div>
+        </div>
+
+        <!-- lab -->
+        <div class="cap-block grid g3" data-group="lab">
+          <div class="field"><label>Daily patient volume</label><select class="scored cap-select"><option value="">—</option><option value="0">Less than 50</option><option value="10">50–100</option><option value="15">More than 100</option></select></div>
+          <div class="field"><label>Clinical staffing</label><select class="scored cap-select"><option value="">—</option><option value="0">No full-time pathologist</option><option value="10">Full-time pathologist + quality manager</option><option value="15">+ microbiologist / radiologist per services</option></select></div>
+          <div class="field"><label>Equipment &amp; scope</label><select class="scored cap-select"><option value="">—</option><option value="0">Basic</option><option value="10">5-part + biochemistry + hormone + microbiology</option><option value="15">+ NABL-scoped imaging (CT / MRI / USG)</option></select></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4 · Digital -->
+    <section class="card">
+      <div class="card-head"><span class="idx">04</span><div><h2>Digital maturity</h2><div class="sub">Verified via ABDM / HFR / NHCX registry</div></div><span class="pts">10 pts</span></div>
+      <div class="card-body">
+        <div class="grid g2">
+          <div class="field"><label>HMIS</label><select id="q5" class="scored" data-block="digital"><option value="">— Select —</option><option value="0">None</option><option value="3">Basic billing / registration</option><option value="5">Integrated clinical + operational</option></select></div>
+          <div class="field"><label>ABDM / NHCX status</label><select id="q6" class="scored" data-block="digital"><option value="">— Select —</option><option value="0">Not registered</option><option value="2">HFR ID obtained</option><option value="4">ABHA-linked records</option><option value="5">NHCX-onboarded (paperless cashless)</option></select></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5 · Geography -->
+    <section class="card">
+      <div class="card-head"><span class="idx">05</span><div><h2>Location</h2><div class="sub">Applied as a rate-band — does not affect the category</div></div></div>
+      <div class="card-body">
+        <div class="field">
+          <label for="q7">Location tier <span class="req">*</span></label>
+          <select id="q7">
+            <option value="">— Select —</option>
+            <option value="5">Metro (top 6) · +5%</option>
+            <option value="0">Tier-I city · baseline</option>
+            <option value="-10">Tier-II city · −10%</option>
+            <option value="-20">Tier-III city · −20%</option>
+            <option value="-25">Rural / remote · −25%</option>
+          </select>
+        </div>
+      </div>
+    </section>
+
+    <!-- 6 · Declared -->
+    <section class="card">
+      <div class="card-head"><span class="idx">06</span><div><h2>Declared information</h2><div class="sub">For contracting and network mapping · not scored</div></div></div>
+      <div class="card-body">
+        <div class="grid" style="gap:18px">
+          <div class="field">
+            <label>Cashless facility for private insurance?</label>
+            <div class="radio-row">
+              <label class="chk"><input type="radio" name="cashless" value="Yes" /> Yes</label>
+              <label class="chk"><input type="radio" name="cashless" value="No" /> No</label>
+            </div>
+          </div>
+          <div class="field">
+            <label>Government schemes empanelled</label>
+            <div class="chips" id="schemes">
+              <label class="chk"><input type="checkbox" value="CGHS" /> CGHS</label>
+              <label class="chk"><input type="checkbox" value="ESI" /> ESI</label>
+              <label class="chk"><input type="checkbox" value="ECHS" /> ECHS</label>
+              <label class="chk"><input type="checkbox" value="PMJAY" /> PMJAY</label>
+              <label class="chk"><input type="checkbox" value="PSU" /> PSU</label>
+            </div>
+          </div>
+          <div class="field"><label>Existing TPA / insurer panels</label><input id="panels" placeholder="Comma-separated, optional" /></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Declaration + submit -->
+    <section class="card">
+      <div class="card-body">
+        <label class="declare"><input type="checkbox" id="declaration" /> I confirm that all information submitted is accurate, complete, and supported by documentary evidence available for verification on request.</label>
+        <div class="actions" style="margin-top:18px">
+          <button class="btn btn-primary" id="submitBtn">Submit &amp; record</button>
+          <button class="btn btn-ghost" id="resetBtn" type="button">Start over</button>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- ============ RESULT PANEL ============ -->
+  <div class="panel-col">
+    <div class="panel">
+      <div class="panel-top">
+        <div class="lbl">Category</div>
+        <div class="seal">
+          <svg width="128" height="128" viewBox="0 0 128 128">
+            <circle class="ring-bg" cx="64" cy="64" r="56" fill="none" stroke-width="9"/>
+            <circle class="ring-fg" id="ring" cx="64" cy="64" r="56" fill="none" stroke-width="9" stroke-dasharray="351.86" stroke-dashoffset="351.86"/>
+          </svg>
+          <div class="center">
+            <div class="grade placeholder" id="grade">—</div>
+            <div class="scoreline"><span id="scoreNum">0</span>/100</div>
+          </div>
+        </div>
+        <div class="cat-name" id="catName">Not assessed yet</div>
+      </div>
+
+      <!-- rate-band: visually separate from the category -->
+      <div class="band">
+        <div class="row">
+          <span class="pin"><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M12 2a7 7 0 0 0-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 0 0-7-7z" stroke="#1C5D52" stroke-width="1.8"/><circle cx="12" cy="9" r="2.4" fill="#1C5D52"/></svg></span>
+          <span class="k">Location rate-band</span>
+          <span class="v" id="bandVal">—</span>
+        </div>
+        <div class="note">Adjusts the negotiated package rate by location. It does <b>not</b> change the category above.</div>
+      </div>
+
+      <div class="breakdown">
+        <div class="brk"><span class="name">Accreditation</span><span class="bar"><i id="bAcc"></i></span><span class="val"><span id="vAcc">0</span>/45</span></div>
+        <div class="brk"><span class="name">Capability</span><span class="bar"><i id="bCap"></i></span><span class="val"><span id="vCap">0</span>/45</span></div>
+        <div class="brk"><span class="name">Digital</span><span class="bar"><i id="bDig"></i></span><span class="val"><span id="vDig">0</span>/10</span></div>
+      </div>
+
+      <div class="progress">
+        <div class="track"><i id="progBar"></i></div>
+        <div class="txt"><span id="progText">0 of 7 answered</span><span id="progPct">0%</span></div>
+      </div>
+
+      <div class="tier-legend">
+        <b>A*</b> 85–100 Preferred · <b>A</b> 70–84 Standard · <b>B</b> 55–69 Conditional · <b>C</b> 40–54 Probationary · <b>D</b> 0–39 Not empanelled
+      </div>
+
+      <div class="panel-foot">
+        <div class="status" id="status"></div>
+        <button class="btn btn-ghost" id="printBtn" type="button" style="display:none">Print / save as PDF</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<footer>Healthcare Organisation Categorisation · Reference framework for payer–provider contracting · Responses are auditable and may be verified against registries.</footer>
+
+<iframe name="sink" id="sink" style="display:none"></iframe>
+
+<script>
+/* ====== BACKEND ====== Paste your deployed Apps Script Web App URL here.
+   Leave as-is to run in preview mode (scoring works; submissions are not stored). */
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw8op0BGl5FeeqDES8HpTXdkkzIsBV2GwNiyXDD6hbV_Tkff7IyD5SKfFd2muRAlQtM5w/exec";
+
+const CIRC = 351.86; // 2πr, r=56
+const typeToGroup = {multi:'hospital',single:'hospital',super:'hospital',cancer:'hospital',eye:'eye',dental:'dental',dialysis:'dialysis',chemo:'chemo',lab:'lab'};
+
+const $ = id => document.getElementById(id);
+const ftype = $('facilityType');
+
+function activeCapBlock(){
+  const t = ftype.value; if(!t) return null;
+  const g = typeToGroup[t];
+  return document.querySelector('.cap-block[data-group="'+g+'"]');
+}
+
+function showCapBlock(){
+  document.querySelectorAll('.cap-block').forEach(b=>{
+    b.classList.remove('active');
+    b.querySelectorAll('select').forEach(s=>{ if(b!==activeCapBlock()) s.value=''; });
+  });
+  const blk = activeCapBlock();
+  $('capPrompt').style.display = blk ? 'none':'block';
+  if(blk) blk.classList.add('active');
+  recompute();
+}
+
+function num(v){ const n=parseInt(v,10); return isNaN(n)?0:n; }
+
+function category(score){
+  if(score>=85) return {g:'A*', n:'Preferred Empanelled', c:'var(--tier-astar)'};
+  if(score>=70) return {g:'A',  n:'Standard Empanelled',  c:'var(--tier-a)'};
+  if(score>=55) return {g:'B',  n:'Conditional Empanelled',c:'var(--tier-b)'};
+  if(score>=40) return {g:'C',  n:'Probationary Review',   c:'var(--tier-c)'};
+  return {g:'D', n:'Not Empanelled', c:'var(--tier-d)'};
+}
+
+function bandLabel(v){
+  return {'5':'+5%','0':'baseline','-10':'−10%','-20':'−20%','-25':'−25%'}[v] || '—';
+}
+
+function recompute(){
+  const acc = num($('q1').value);
+  const blk = activeCapBlock();
+  let cap = 0, capAnswered = 0, capTotal = 0;
+  if(blk){
+    blk.querySelectorAll('.cap-select').forEach(s=>{ cap += num(s.value); capTotal++; if(s.value!=='') capAnswered++; });
+  }
+  const dig = num($('q5').value) + num($('q6').value);
+  const total = acc + cap + dig;
+
+  // seal
+  $('scoreNum').textContent = total;
+  const off = CIRC - (Math.min(total,100)/100)*CIRC;
+  $('ring').style.strokeDashoffset = off;
+  const cat = category(total);
+  const grade = $('grade');
+  // only show a grade once at least the core blocks have input
+  const anyScored = ($('q1').value!=='' || capAnswered>0 || $('q5').value!=='' || $('q6').value!=='');
+  if(anyScored){ grade.textContent = cat.g; grade.classList.remove('placeholder'); $('catName').textContent = cat.n; $('ring').style.stroke = cat.c; }
+  else { grade.textContent='—'; grade.classList.add('placeholder'); $('catName').textContent='Not assessed yet'; }
+
+  // breakdown bars
+  $('vAcc').textContent=acc; $('bAcc').style.width=(acc/45*100)+'%';
+  $('vCap').textContent=cap; $('bCap').style.width=(cap/45*100)+'%';
+  $('vDig').textContent=dig; $('bDig').style.width=(dig/10*100)+'%';
+
+  // rate-band
+  const bv = $('q7').value;
+  $('bandVal').textContent = bv==='' ? '—' : bandLabel(bv);
+
+  // progress (7 drivers: accreditation, 3 capability, 2 digital, location)
+  let answered = 0;
+  if($('q1').value!=='') answered++;
+  answered += capAnswered;                 // up to 3
+  if($('q5').value!=='') answered++;
+  if($('q6').value!=='') answered++;
+  if($('q7').value!=='') answered++;
+  const totalQ = 7;
+  const pct = Math.round(answered/totalQ*100);
+  $('progBar').style.width=pct+'%';
+  $('progText').textContent = answered+' of '+totalQ+' answered';
+  $('progPct').textContent = pct+'%';
+}
+
+/* ---- validation + submit ---- */
+function validate(){
+  const missing = [];
+  const reqText = {hospitalName:'Facility name',legalEntity:'Legal entity',ownership:'Ownership',address:'Address',state:'State',district:'District',pin:'Pin code',contactPerson:'Contact person',email:'Email',mobile:'Mobile'};
+  for(const id in reqText){ if(!$(id).value.trim()) missing.push(reqText[id]); }
+  if(!ftype.value) missing.push('Facility type');
+  if($('q1').value==='') missing.push('Accreditation');
+  const blk = activeCapBlock();
+  if(blk){ blk.querySelectorAll('.cap-select').forEach(s=>{ if(s.value==='') missing.push('Capability'); }); }
+  if($('q5').value==='' || $('q6').value==='') missing.push('Digital maturity');
+  if($('q7').value==='') missing.push('Location');
+  if(!$('declaration').checked) missing.push('Declaration');
+  return [...new Set(missing)];
+}
+
+function collect(){
+  const blk = activeCapBlock();
+  const caps = blk ? [...blk.querySelectorAll('.cap-select')] : [];
+  const lbl = s => s && s.value!=='' ? s.options[s.selectedIndex].text : '';
+  const schemes = [...document.querySelectorAll('#schemes input:checked')].map(c=>c.value).join(', ');
+  const cashlessEl = document.querySelector('input[name="cashless"]:checked');
+  const acc = num($('q1').value);
+  const cap = caps.reduce((a,s)=>a+num(s.value),0);
+  const dig = num($('q5').value)+num($('q6').value);
+  const total = acc+cap+dig;
+  const cat = category(total);
+  return {
+    facilityType: ftype.options[ftype.selectedIndex].text,
+    hospitalName:$('hospitalName').value, legalEntity:$('legalEntity').value, ownership:$('ownership').value,
+    address:$('address').value, state:$('state').value, district:$('district').value, pin:$('pin').value,
+    hfrId:$('hfrId').value, rohiniId:$('rohiniId').value,
+    contactPerson:$('contactPerson').value, designation:$('designation').value, email:$('email').value, mobile:$('mobile').value,
+    accreditation: lbl($('q1')), accreditationScore: acc,
+    capability1: lbl(caps[0]||null), capability2: lbl(caps[1]||null), capability3: lbl(caps[2]||null), capabilityScore: cap,
+    hmis: lbl($('q5')), abdm: lbl($('q6')), digitalScore: dig,
+    totalScore: total, category: cat.g+' — '+cat.n,
+    location: $('q7').options[$('q7').selectedIndex].text, rateBand: bandLabel($('q7').value),
+    cashless: cashlessEl?cashlessEl.value:'', schemes: schemes, panels:$('panels').value
+  };
+}
+
+function setStatus(msg,kind){ const s=$('status'); s.textContent=msg; s.className='status '+kind; }
+
+$('submitBtn').addEventListener('click', ()=>{
+  const miss = validate();
+  if(miss.length){ setStatus('Please complete: '+miss.join(', '), 'warn'); $('printBtn').style.display='none'; return; }
+  const data = collect();
+  if(APPS_SCRIPT_URL.indexOf('PASTE_YOUR')===-1){
+    const form = document.createElement('form');
+    form.method='POST'; form.action=APPS_SCRIPT_URL; form.target='sink';
+    Object.keys(data).forEach(k=>{ const i=document.createElement('input'); i.type='hidden'; i.name=k; i.value=data[k]; form.appendChild(i); });
+    document.body.appendChild(form); form.submit(); document.body.removeChild(form);
+    setStatus('Submitted — '+data.category+' recorded.', 'ok');
+  } else {
+    setStatus('Assessed: '+data.category+'. (Preview mode — backend not connected, nothing stored.)', 'ok');
+  }
+  $('printBtn').style.display='block';
+});
+
+$('printBtn').addEventListener('click', ()=>window.print());
+$('resetBtn').addEventListener('click', ()=>{
+  document.querySelectorAll('input,select').forEach(el=>{ if(el.type==='checkbox'||el.type==='radio') el.checked=false; else el.value=''; });
+  showCapBlock(); setStatus('','' ); $('printBtn').style.display='none';
+});
+
+ftype.addEventListener('change', showCapBlock);
+document.addEventListener('change', e=>{ if(e.target.matches('select, input')) recompute(); });
+recompute();
+</script>
+</body>
+</html>
